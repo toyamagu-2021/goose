@@ -323,7 +323,10 @@ fn get_github_recipe_info(repo: &str, dir_name: &str, recipe_filename: &str) -> 
             .map_err(|e| anyhow!("Failed to convert content to string: {}", e))?;
 
         // Parse the recipe content
-        let recipe = crate::recipes::recipe::parse_recipe_content(&content)?;
+        let (recipe, _) = crate::recipes::template_recipe::parse_recipe_content(
+            &content,
+            format!("{}/{}", repo, dir_name),
+        )?;
 
         return Ok(RecipeInfo {
             name: dir_name.to_string(),

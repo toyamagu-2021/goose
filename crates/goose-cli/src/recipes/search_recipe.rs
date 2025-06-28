@@ -172,7 +172,12 @@ fn scan_directory_for_recipes(dir: &Path) -> Result<Vec<RecipeInfo>> {
 
 fn create_local_recipe_info(path: &Path) -> Result<RecipeInfo> {
     let content = fs::read_to_string(path)?;
-    let recipe = crate::recipes::recipe::parse_recipe_content(&content)?;
+    let recipe_dir = path
+        .parent()
+        .unwrap_or_else(|| Path::new("."))
+        .to_string_lossy()
+        .to_string();
+    let (recipe, _) = crate::recipes::template_recipe::parse_recipe_content(&content, recipe_dir)?;
 
     let name = path
         .file_stem()
