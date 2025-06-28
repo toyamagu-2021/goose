@@ -258,7 +258,11 @@ enum RecipeCommand {
         format: String,
 
         /// Show verbose information including recipe descriptions
-        #[arg(short, long, help = "Show verbose information including recipe descriptions")]
+        #[arg(
+            short,
+            long,
+            help = "Show verbose information including recipe descriptions"
+        )]
         verbose: bool,
     },
 }

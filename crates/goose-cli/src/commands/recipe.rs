@@ -3,9 +3,9 @@ use base64::Engine;
 use console::style;
 use serde_json;
 
+use crate::recipes::github_recipe::RecipeSource;
 use crate::recipes::recipe::load_recipe;
 use crate::recipes::search_recipe::list_available_recipes;
-use crate::recipes::github_recipe::RecipeSource;
 
 /// Validates a recipe file
 ///

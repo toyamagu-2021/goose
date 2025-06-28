@@ -5,7 +5,10 @@ use std::{env, fs};
 
 use crate::recipes::recipe::RECIPE_FILE_EXTENSIONS;
 
-use super::github_recipe::{retrieve_recipe_from_github, list_github_recipes, GOOSE_RECIPE_GITHUB_REPO_CONFIG_KEY, RecipeInfo, RecipeSource};
+use super::github_recipe::{
+    list_github_recipes, retrieve_recipe_from_github, RecipeInfo, RecipeSource,
+    GOOSE_RECIPE_GITHUB_REPO_CONFIG_KEY,
+};
 
 const GOOSE_RECIPE_PATH_ENV_VAR: &str = "GOOSE_RECIPE_PATH";
 
