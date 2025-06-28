@@ -1,6 +1,8 @@
 use anyhow::{anyhow, Result};
 use console::style;
 use serde::{Deserialize, Serialize};
+
+use crate::recipes::recipe::RECIPE_FILE_EXTENSIONS;
 use std::env;
 use std::fs;
 use std::path::Path;
@@ -8,8 +10,6 @@ use std::path::PathBuf;
 use std::process::Command;
 use std::process::Stdio;
 use tar::Archive;
-
-use crate::recipes::recipe::RECIPE_FILE_EXTENSIONS;
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct RecipeInfo {
@@ -274,7 +274,10 @@ fn check_github_directory_for_recipe(repo: &str, dir_name: &str) -> Result<Recip
     if let Some(items) = contents.as_array() {
         for item in items {
             if let Some(name) = item.get("name").and_then(|n| n.as_str()) {
-                if name == "recipe.yaml" || name == "recipe.json" {
+                if RECIPE_FILE_EXTENSIONS
+                    .iter()
+                    .any(|ext| name == &format!("recipe.{}", ext))
+                {
                     // Found a recipe file, get its content
                     return get_github_recipe_info(repo, dir_name, name);
                 }
