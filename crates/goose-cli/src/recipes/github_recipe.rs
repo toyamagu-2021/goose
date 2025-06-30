@@ -276,7 +276,7 @@ fn check_github_directory_for_recipe(repo: &str, dir_name: &str) -> Result<Recip
             if let Some(name) = item.get("name").and_then(|n| n.as_str()) {
                 if RECIPE_FILE_EXTENSIONS
                     .iter()
-                    .any(|ext| name == &format!("recipe.{}", ext))
+                    .any(|ext| name == format!("recipe.{}", ext))
                 {
                     // Found a recipe file, get its content
                     return get_github_recipe_info(repo, dir_name, name);
