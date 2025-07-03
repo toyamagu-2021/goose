@@ -20,8 +20,6 @@ pub fn safe_truncate(s: &str, max_chars: usize) -> String {
     }
 }
 
-
-
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -50,5 +48,4 @@ mod tests {
         assert_eq!(safe_truncate(mixed, 20), mixed);
         assert_eq!(safe_truncate(mixed, 8), "Hello...");
     }
-
 }
