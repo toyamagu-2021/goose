@@ -12,14 +12,25 @@ use super::github_recipe::{
 
 const GOOSE_RECIPE_PATH_ENV_VAR: &str = "GOOSE_RECIPE_PATH";
 
-pub fn retrieve_recipe_file(recipe_name: &str) -> Result<(String, PathBuf)> {
-    // If recipe_name ends with yaml or json, treat it as a direct file path
+pub struct RecipeFile {
+    pub content: String,
+    pub parent_dir: PathBuf,
+    pub file_path: PathBuf,
+}
+
+pub fn retrieve_recipe_file(recipe_name: &str) -> Result<RecipeFile> {
     if RECIPE_FILE_EXTENSIONS
         .iter()
         .any(|ext| recipe_name.ends_with(&format!(".{}", ext)))
     {
         let path = PathBuf::from(recipe_name);
         return read_recipe_file(path);
+    }
+    if is_file_path(recipe_name) || is_file_name(recipe_name) {
+        return Err(anyhow!(
+            "Recipe file {} is not a json or yaml file",
+            recipe_name
+        ));
     }
     retrieve_recipe_from_local_path(recipe_name).or_else(|e| {
         if let Some(recipe_repo_full_name) = configured_github_recipe_repo() {
@@ -30,7 +41,18 @@ pub fn retrieve_recipe_file(recipe_name: &str) -> Result<(String, PathBuf)> {
     })
 }
 
-fn read_recipe_in_dir(dir: &Path, recipe_name: &str) -> Result<(String, PathBuf)> {
+fn is_file_path(recipe_name: &str) -> bool {
+    recipe_name.contains('/')
+        || recipe_name.contains('\\')
+        || recipe_name.starts_with('~')
+        || recipe_name.starts_with('.')
+}
+
+fn is_file_name(recipe_name: &str) -> bool {
+    Path::new(recipe_name).extension().is_some()
+}
+
+fn read_recipe_in_dir(dir: &Path, recipe_name: &str) -> Result<RecipeFile> {
     for ext in RECIPE_FILE_EXTENSIONS {
         let recipe_path = dir.join(format!("{}.{}", recipe_name, ext));
         if let Ok(result) = read_recipe_file(recipe_path) {
@@ -45,7 +67,7 @@ fn read_recipe_in_dir(dir: &Path, recipe_name: &str) -> Result<(String, PathBuf)
     )))
 }
 
-fn retrieve_recipe_from_local_path(recipe_name: &str) -> Result<(String, PathBuf)> {
+fn retrieve_recipe_from_local_path(recipe_name: &str) -> Result<RecipeFile> {
     let mut search_dirs = vec![PathBuf::from(".")];
     if let Ok(recipe_path_env) = env::var(GOOSE_RECIPE_PATH_ENV_VAR) {
         let path_separator = if cfg!(windows) { ';' } else { ':' };
@@ -81,10 +103,22 @@ fn configured_github_recipe_repo() -> Option<String> {
     }
 }
 
-fn read_recipe_file<P: AsRef<Path>>(recipe_path: P) -> Result<(String, PathBuf)> {
-    let path = recipe_path.as_ref();
+fn convert_path_with_tilde_expansion(path: &Path) -> PathBuf {
+    if let Some(path_str) = path.to_str() {
+        if let Some(stripped) = path_str.strip_prefix("~/") {
+            if let Some(home_dir) = dirs::home_dir() {
+                return home_dir.join(stripped);
+            }
+        }
+    }
+    PathBuf::from(path)
+}
 
-    let content = fs::read_to_string(path)
+fn read_recipe_file<P: AsRef<Path>>(recipe_path: P) -> Result<RecipeFile> {
+    let raw_path = recipe_path.as_ref();
+    let path = convert_path_with_tilde_expansion(raw_path);
+
+    let content = fs::read_to_string(&path)
         .map_err(|e| anyhow!("Failed to read recipe file {}: {}", path.display(), e))?;
 
     let canonical = path.canonicalize().map_err(|e| {
@@ -100,7 +134,11 @@ fn read_recipe_file<P: AsRef<Path>>(recipe_path: P) -> Result<(String, PathBuf)>
         .ok_or_else(|| anyhow!("Resolved path has no parent: {}", canonical.display()))?
         .to_path_buf();
 
-    Ok((content, parent_dir))
+    Ok(RecipeFile {
+        content,
+        parent_dir,
+        file_path: canonical,
+    })
 }
 
 /// Lists all available recipes from local paths and GitHub repositories
